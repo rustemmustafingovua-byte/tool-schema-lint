@@ -23,9 +23,18 @@ Agents call tools wrongly because the schema is ambiguous. tool-schema-lint chec
 ## Install
 
 ```bash
-npm i -g tool-schema-lint
+# tarball из релиза: без токена и без npm-логина
+npm i -g https://github.com/rustemmustafingovua-byte/tool-schema-lint/releases/download/v0.1.0/tool-schema-lint-0.1.0.tgz
 ```
 
+<details>
+<summary>Через GitHub Packages</summary>
+
+```bash
+npm i -g @rustemmustafingovua-byte/tool-schema-lint --registry=https://npm.pkg.github.com
+```
+
+</details>
 ## What it does
 
 | | |
