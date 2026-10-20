@@ -39,5 +39,8 @@
   "bugs": {
     "url": "https://github.com/rustemmustafingovua-byte/tool-schema-lint/issues"
   },
-  "homepage": "https://github.com/rustemmustafingovua-byte/tool-schema-lint"
+  "homepage": "https://github.com/rustemmustafingovua-byte/tool-schema-lint",
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  }
 }

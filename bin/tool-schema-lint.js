@@ -9,6 +9,19 @@
 import { readFileSync, existsSync } from "node:fs"
 import { lintTools, suggestDescription, RULES } from "../src/index.js"
 
+// --- CLI shell: --help / --version -------------------------------------------
+const HELP = "tool-schema-lint — Lint MCP tool schemas before your agent misuses them.\n\nUSAGE\n  tool-schema-lint tools.json\n  tool-schema-lint --stdin < tools.json\n  tool-schema-lint tools.json --suggest\n\nCOMMANDS / OPTIONS\n  --stdin    read the tool list from standard input\n  --suggest  print a rewritten description for every tool with findings\n\nExit code 1 when a tool has an error-level finding.\n\nMIT · https://github.com/rustemmustafingovua-byte"
+const VERSION = "0.1.0"
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  console.log(HELP)
+  process.exit(0)
+}
+if (process.argv.includes("--version") || process.argv.includes("-V")) {
+  console.log(VERSION)
+  process.exit(0)
+}
+
+
 const argv = process.argv.slice(2)
 let raw = ""
 if (argv.includes("--stdin")) {
