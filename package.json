@@ -1,0 +1,43 @@
+{
+  "name": "tool-schema-lint",
+  "version": "0.1.0",
+  "description": "Agents call tools wrongly because the schema is ambiguous. tool-schema-lint checks the things that cause that: a missing description, an input nobody explained, an optional parameter with no default, a string that should have been an enum, and a schema so big it eats the context.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "tool-schema-lint": "bin/tool-schema-lint.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "linting",
+    "tool-use",
+    "schema",
+    "agents",
+    "llm",
+    "developer-tools"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "node --check src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rustemmustafingovua-byte/tool-schema-lint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rustemmustafingovua-byte/tool-schema-lint/issues"
+  },
+  "homepage": "https://github.com/rustemmustafingovua-byte/tool-schema-lint"
+}
