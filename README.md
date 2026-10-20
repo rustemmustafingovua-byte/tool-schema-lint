@@ -44,6 +44,25 @@ tool-schema-lint --stdin < tools.json
 tool-schema-lint tools.json --suggest
 ```
 
+## CLI
+
+```
+tool-schema-lint — Lint MCP tool schemas before your agent misuses them.
+
+USAGE
+  tool-schema-lint tools.json
+  tool-schema-lint --stdin < tools.json
+  tool-schema-lint tools.json --suggest
+
+COMMANDS / OPTIONS
+  --stdin    read the tool list from standard input
+  --suggest  print a rewritten description for every tool with findings
+
+Exit code 1 when a tool has an error-level finding.
+
+MIT · https://github.com/rustemmustafingovua-byte
+```
+
 ## Part of a portfolio
 
 | Project | What it does |
