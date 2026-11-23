@@ -51,6 +51,8 @@ npm i -g @rustemmustafingovua-byte/tool-schema-lint --registry=https://npm.pkg.g
 tool-schema-lint tools.json
 tool-schema-lint --stdin < tools.json
 tool-schema-lint tools.json --suggest
+tool-schema-lint tools.json --fix
+tool-schema-lint tools.json --fix --dry-run
 ```
 
 ## CLI
@@ -62,10 +64,14 @@ USAGE
   tool-schema-lint tools.json
   tool-schema-lint --stdin < tools.json
   tool-schema-lint tools.json --suggest
+  tool-schema-lint tools.json --fix
+  tool-schema-lint tools.json --fix --dry-run
 
 COMMANDS / OPTIONS
   --stdin    read the tool list from standard input
   --suggest  print a rewritten description for every tool with findings
+  --fix      rewrite descriptions into tools.json and keep the original as a .bak backup
+  --dry-run  print the unified diff of description fixes without modifying files
 
 Exit code 1 when a tool has an error-level finding.
 

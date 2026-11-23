@@ -110,10 +110,63 @@ export function suggestDescription(tool) {
   if (!keys.length) return `Describe what ${tool.name} does and what it returns.`
   const requiredList = req.join(", ")
   const optional = keys.filter((k) => !req.includes(k)).join(", ")
+  const inputClause = requiredList
+    ? `Required input: ${requiredList}.` + (optional ? ` Optional: ${optional}.` : "")
+    : `Optional input: ${optional}.`
   return (
     `${tool.name}: does one thing and says so. ` +
-    `Required input: ${requiredList}.` +
-    (optional ? ` Optional: ${optional}.` : "") +
-    ` Returns the result directly; explain errors in the response.`
+    `${inputClause} ` +
+    `Returns the result directly; explain errors in the response.`
   )
+}
+
+function needsDescriptionFix(tool, toolReport) {
+  if (!toolReport?.issues?.length) return false
+  const descLen = typeof tool?.description === "string" ? tool.description.length : 0
+  return toolReport.issues.some(
+    (issue) =>
+      issue.rule === RULES.MISSING_DESCRIPTION ||
+      issue.rule === RULES.VAGUE_DESCRIPTION ||
+      (issue.rule === RULES.OVERSIZED && descLen > LIMITS.maxDescriptionChars),
+  )
+}
+
+/**
+ * Rewrite descriptions for tools with description findings.
+ * Returns cloned tools so callers can inspect or diff without mutating input.
+ */
+export function fixTools(tools) {
+  const report = lintTools(tools)
+  const changes = []
+  const fixed = tools.map((tool, index) => {
+    const toolReport = report.perTool[index]
+    if (!needsDescriptionFix(tool, toolReport)) return { ...tool }
+    const before = tool?.description
+    const after = suggestDescription(tool)
+    if (before === after) return { ...tool }
+    changes.push({ index, name: tool?.name || `#${index}`, before, after })
+    return { ...tool, description: after }
+  })
+  return { tools: fixed, changes }
+}
+
+/** Apply description fixes while preserving either an array or { tools } envelope. */
+export function applyFixesToData(data) {
+  const isArray = Array.isArray(data)
+  const tools = isArray ? data : data?.tools || []
+  const { tools: fixedTools, changes } = fixTools(tools)
+  const updated = isArray ? fixedTools : { ...data, tools: fixedTools }
+  return { data: updated, tools: fixedTools, changes }
+}
+
+/** Format description changes as a readable unified diff for --dry-run output. */
+export function formatDiff(changes, label = "tools.json") {
+  if (!changes.length) return ""
+  const lines = [`--- a/${label}`, `+++ b/${label}`]
+  for (const change of changes) {
+    lines.push(`@@ ${change.name} @@`)
+    lines.push(`- description: ${change.before === undefined ? "(missing)" : JSON.stringify(change.before)}`)
+    lines.push(`+ description: ${JSON.stringify(change.after)}`)
+  }
+  return lines.join("\n")
 }
