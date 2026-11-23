@@ -80,15 +80,16 @@ if (wantSuggest) {
 let finalReport = report
 if (wantFix || wantDryRun) {
   const { data: updatedData, tools: fixedTools, changes } = applyFixesToData(data)
+  const updatedRaw = `${JSON.stringify(updatedData, null, 2)}\n`
   if (!changes.length) {
     console.log("\nNo description fixes needed.")
   } else if (wantDryRun) {
     console.log("\n--- dry-run diff ---")
-    console.log(formatDiff(changes, file || "stdin"))
+    console.log(formatDiff(raw, updatedRaw, file || "stdin"))
   } else {
     const backupPath = nextBackupPath(file)
     copyFileSync(file, backupPath)
-    writeFileSync(file, `${JSON.stringify(updatedData, null, 2)}\n`, "utf8")
+    writeFileSync(file, updatedRaw, "utf8")
     finalReport = lintTools(fixedTools)
     console.log(`\nRewrote ${changes.length} description(s) in ${file} (backup: ${backupPath})`)
     console.log(`after fix: score ${finalReport.score}/100  ·  errors ${finalReport.errors} · warnings ${finalReport.warns}  →  ${finalReport.verdict}`)

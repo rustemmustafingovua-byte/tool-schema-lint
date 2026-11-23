@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process"
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
-import { fixTools, applyFixesToData, formatDiff, lintTools } from "../src/index.js"
+import { fixTools, applyFixesToData, formatDiff, lintTools, suggestDescription, LIMITS } from "../src/index.js"
 
 const CLI = resolve("bin/tool-schema-lint.js")
 
@@ -57,14 +57,62 @@ test("applyFixesToData preserves { tools } object wrapper and extra fields", () 
   assert.equal(data.tools.length, 3)
 })
 
-test("formatDiff renders unified diff lines for description changes", () => {
-  const { changes } = fixTools(sampleTools)
-  const diff = formatDiff(changes, "tools.json")
+test("fixTools preserves existing description semantics when adding input hints", () => {
+  const destructive = [
+    {
+      name: "delete_record",
+      description: "Permanently deletes the selected record; this operation cannot be undone.",
+      inputSchema: {
+        type: "object",
+        properties: { record_id: { type: "string" } },
+        required: ["record_id"],
+      },
+    },
+  ]
+  const { tools, changes } = fixTools(destructive)
+  assert.equal(changes.length, 1)
+  assert.match(tools[0].description, /Permanently deletes the selected record; this operation cannot be undone\./)
+  assert.match(tools[0].description, /Required input: record_id\./)
+  assert.equal(lintTools(tools).issues.length, 0)
+})
+
+test("fixTools keeps generated descriptions within LIMITS.maxDescriptionChars and skips unsafe oversized rewrites", () => {
+  const manyProps = {}
+  const manyReq = []
+  for (let i = 0; i < 25; i += 1) {
+    const key = `required_parameter_${String(i).padStart(2, "0")}`
+    manyProps[key] = { type: "string" }
+    manyReq.push(key)
+  }
+  const missingMany = [{ name: "bulk_import", inputSchema: { type: "object", properties: manyProps, required: manyReq } }]
+  const suggested = suggestDescription(missingMany[0])
+  assert.ok(suggested.length <= LIMITS.maxDescriptionChars)
+  const { tools: fixedMissing } = fixTools(missingMany)
+  assert.ok(fixedMissing[0].description.length <= LIMITS.maxDescriptionChars)
+
+  const oversized = [
+    {
+      name: "legacy_tool",
+      description: `${"Important operational note. ".repeat(20)}Required input: required_parameter_00.`,
+      inputSchema: { type: "object", properties: manyProps, required: manyReq },
+    },
+  ]
+  const { tools: fixedOversized, changes } = fixTools(oversized)
+  assert.equal(changes.length, 0)
+  assert.equal(fixedOversized[0].description, oversized[0].description)
+})
+
+test("formatDiff renders valid unified diff hunks from original and rewritten JSON", () => {
+  const original = `${JSON.stringify(sampleTools, null, 2)}\n`
+  const { data } = applyFixesToData(sampleTools)
+  const updated = `${JSON.stringify(data, null, 2)}\n`
+  const diff = formatDiff(original, updated, "tools.json")
   assert.match(diff, /^--- a\/tools\.json/m)
   assert.match(diff, /^\+\+\+ b\/tools\.json/m)
-  assert.match(diff, /@@ search_docs @@/)
-  assert.match(diff, /^- description: \(missing\)/m)
-  assert.match(diff, /^\+ description: "search_docs:/m)
+  assert.match(diff, /^@@ -\d+,\d+ \+\d+,\d+ @@$/m)
+  assert.match(diff, /^\+\s+"description": "search_docs:/m)
+  assert.match(diff, /^-\s+"description": "Runs a job\.",$/m)
+  assert.match(diff, /^\+\s+"description": "Runs a job\. Required input: id\.",$/m)
 })
 
 test("CLI --fix writes updated tools.json and preserves original as backup", () => {
@@ -120,7 +168,8 @@ test("CLI --dry-run prints the diff without modifying the file or creating a bac
       assert.equal(err.status, 1)
     }
     assert.match(out, /--- dry-run diff ---/)
-    assert.match(out, /@@ search_docs @@/)
+    assert.match(out, /^@@ -\d+,\d+ \+\d+,\d+ @@$/m)
+    assert.match(out, /^\+\s+"description": "search_docs:/m)
     assert.equal(readFileSync(file, "utf8"), original)
     assert.equal(existsSync(`${file}.bak`), false)
   } finally {
